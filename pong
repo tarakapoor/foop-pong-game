@@ -1,0 +1,266 @@
+import pygame
+import sys
+import math
+
+score = 0
+score2 = 0
+
+class Ball(object):
+    def __init__(self, x, y, width, height, vx, vy, colour):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.vx = vx
+        self.vy = vy
+        self.colour = colour
+
+    def render(self, screen):
+        pygame.draw.ellipse(screen, self.colour, self.rect)
+
+    def update(self):
+        self.x += self.vx
+        self.y += self.vy
+
+    @property
+    def rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)
+
+
+class Paddle(object):
+    def __init__(self, x, y, width, height, speed, colour):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.vx = 0
+        self.speed = speed*5/3
+        self.colour = colour
+
+    def render(self, screen):
+        pygame.draw.rect(screen, self.colour, self.rect)
+
+    def update(self):
+        self.x += self.vx
+
+    def key_handler(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                self.vx = -self.speed
+            elif event.key == pygame.K_RIGHT:
+                self.vx = self.speed
+        elif event.key in (pygame.K_LEFT, pygame.K_RIGHT):
+                self.vx = 0
+
+    @property
+    def rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)   
+
+
+class Paddle2(object):
+    def __init__(self, x, y, width, height, speed, colour):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.vx = 0
+        self.speed = speed*5/3
+        self.colour = colour
+
+    def render(self, screen):
+        pygame.draw.rect(screen, self.colour, self.rect)
+
+    def update(self):
+        self.x += self.vx
+
+    def key_handler(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a:
+                self.vx = -self.speed
+            elif event.key == pygame.K_d:
+                self.vx = self.speed
+        elif event.key in (pygame.K_a, pygame.K_d):
+                self.vx = 0
+
+    @property
+    def rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)   
+
+class Pong(object):
+    global score, score2
+  
+    COLOURS = {"BLACK": (  0,   0,   0),
+               "WHITE": (255, 255, 255),
+               "RED"  : (255,   0,   0),
+               "GREEN": (0, 255, 0),
+               "BLUE" : (0, 240, 255)
+    }
+    def __init__(self):
+        pygame.init()
+        (WIDTH, HEIGHT) = (640, 480)
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Lewis' Pong")
+        self.ball = Ball(5, 5, 50, 50, 5, 5, Pong.COLOURS["BLACK"])
+        self.paddle = Paddle(WIDTH / 2, HEIGHT - 50, 100,
+                             10, 3, Pong.COLOURS["BLACK"])
+        self.paddle2 = Paddle2(WIDTH / 3, HEIGHT - 410, 100,
+                             10, 3, Pong.COLOURS["RED"])
+        self.volleys = 0
+#        self.score2 = 0
+
+
+
+    def play(self):
+        clock = pygame.time.Clock()
+        while True:
+            clock.tick(50)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type in (pygame.KEYDOWN, pygame.KEYUP):
+                    self.paddle.key_handler(event)
+                    self.paddle2.key_handler(event)
+
+            self.collision_handler()
+            self.draw()
+
+    def collision_handler(self):
+        global score, score2
+        #if self.paddle.vx == self.paddle2.vx:
+          #print(self.paddle.vx)
+        
+        if self.ball.rect.colliderect(self.paddle.rect):
+            self.ball.vy = -self.ball.vy
+            self.volleys += 1
+        if self.ball.rect.colliderect(self.paddle2.rect):
+            self.ball.vy = -self.ball.vy
+            self.volleys += 1
+
+            #score2 += 1
+
+        if self.ball.x + self.ball.width >= self.screen.get_width():
+            self.ball.vx = -(math.fabs(self.ball.vx))
+        elif self.ball.x <= 0:
+            self.ball.vx = math.fabs(self.ball.vx)
+
+        #player 1 misses
+        if self.ball.y + self.ball.height >= self.screen.get_height():
+            font = pygame.font.Font(None, 45)
+            score2 += 1
+            self.draw()
+            
+            #score2_text = font.render("Player 2: " + str(score2), True, Pong.COLOURS["RED"])
+            #self.screen.blit(score2_text, (400, 0))
+            #pygame.display.update()
+
+            #finalscore_text = font.render("Player 1 Final Score: " + str(self.score), True, Pong.COLOURS["BLACK"])
+            #finalscore2_text = font.render("Player 2 Final Score: " + str(self.score2), True, Pong.COLOURS["RED"])
+            #self.screen.blit(finalscore_text, (1, 100))
+            #self.screen.blit(finalscore2_text, (300, 100))
+
+            result_text = font.render("Player 2 wins!", True, Pong.COLOURS["BLACK"])
+            
+            self.screen.blit(result_text, (200, 120))
+            
+            font = pygame.font.Font(None, 33)
+            playagain_text = font.render("Play again? Press y to play again or press n to quit.", True, Pong.COLOURS["RED"])
+            
+            self.screen.blit(playagain_text, (50, 250))
+          
+            pygame.display.update()
+            
+            while True:#making a loop
+                for event in pygame.event.get():
+                    #print("asdfasdfasdf")
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_y:
+                            #print("running again")
+                            Pong().play()
+                            #pygame.init()
+                            #pygame.quit()
+                            #sys.exit()
+                            pass
+                        if event.key == pygame.K_n:
+                            #print("closing")
+                            pygame.quit()
+                            sys.exit()
+
+        #player 2 misses
+        elif self.ball.y <= 0:
+            font = pygame.font.Font(None, 45)
+            score += 1
+            self.draw()
+            #draw(self)
+
+            #finalscore_text = font.render("Player 1 Final Score: " + str(self.score), True, Pong.COLOURS["BLACK"])
+            #finalscore2_text = font.render("Player 2 Final Score: " + str(self.score2), True, Pong.COLOURS["RED"])
+            #self.screen.blit(finalscore_text, (1, 100))
+            #self.screen.blit(finalscore2_text, (300, 100))
+            result_text = font.render("Player 1 wins!", True, Pong.COLOURS["BLACK"])
+            
+            self.screen.blit(result_text, (200, 120))
+            
+            font = pygame.font.Font(None, 33)
+            playagain_text = font.render("Play again? Press y to play again or press n to quit.", True, Pong.COLOURS["RED"])
+            
+            self.screen.blit(playagain_text, (50, 250))
+
+            pygame.display.update()
+
+            while True:#making a loop
+                for event in pygame.event.get():
+                    #print("asdfasdfasdf")
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_y:
+                            #print("running again")
+                            Pong().play()
+                            #pygame.init()
+                            #pygame.quit()
+                            #sys.exit()
+                            pass
+                        if event.key == pygame.K_n:
+                            #print("closing")
+                            pygame.quit()
+                            sys.exit()
+
+        if self.paddle.x + self.paddle.width >= self.screen.get_width():
+            self.paddle.x = self.screen.get_width() - self.paddle.width
+        elif self.paddle.x <= 0:
+            self.paddle.x = 0
+            
+        if self.paddle2.x + self.paddle2.width >= self.screen.get_width():
+            self.paddle2.x = self.screen.get_width() - self.paddle2.width
+        elif self.paddle2.x <= 0:
+            self.paddle2.x = 0
+            
+
+    def draw(self):
+        self.screen.fill(Pong.COLOURS["BLUE"])
+
+        font = pygame.font.Font(None, 40)
+        volleys_text = font.render("Volleys: " + str(self.volleys), True,
+                                 Pong.COLOURS["BLACK"])
+        score_text = font.render("Player 1: " + str(score), True,
+                                 Pong.COLOURS["BLACK"])
+        
+        score2_text = font.render("Player 2: " + str(score2), True,
+                                 Pong.COLOURS["RED"])
+        self.screen.blit(volleys_text, (220, 0))
+        self.screen.blit(score_text, (0, 0))
+        self.screen.blit(score2_text, (450, 0))
+
+
+        self.ball.update()
+        self.ball.render(self.screen)
+        self.paddle.update()
+        self.paddle.render(self.screen)
+        self.paddle2.update()
+        self.paddle2.render(self.screen)
+
+        pygame.display.update()
+        
+  
+
+if __name__ == "__main__":
+    Pong().play()
